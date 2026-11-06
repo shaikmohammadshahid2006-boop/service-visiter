@@ -38,7 +38,20 @@ api.interceptors.request.use(
 );
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // If the server returned HTML (e.g. from a rewrite fallback like index.html instead of a JSON API response)
+    if (
+      typeof response.data === 'string' &&
+      (response.data.trim().startsWith('<!DOCTYPE') || response.data.trim().startsWith('<html'))
+    ) {
+      return Promise.reject(
+        new Error(
+          'API endpoint returned HTML instead of JSON. Ensure VITE_API_URL is configured in your Vercel project environment variables pointing to your Render backend URL.'
+        )
+      );
+    }
+    return response;
+  },
   (error) => {
     if (error.response && error.response.status === 401) {
       // Clear token if expired or unauthorized

@@ -2,12 +2,17 @@
   "name": "servicevisit-tracker",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "scripts": {
     "install:all": "npm install --prefix server && npm install --prefix client",
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
     "seed": "npm run seed --prefix server",
-    "build": "npm run build --prefix server && npm run build --prefix client",
+    "build": "npm run build --prefix client",
+    "build:all": "npm run build --prefix server && npm run build --prefix client",
     "start": "npm run start --prefix server"
   }
 }

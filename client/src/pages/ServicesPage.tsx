@@ -36,14 +36,18 @@ export const ServicesPage: React.FC = () => {
     }
 
     Promise.all([
-      api.get('/services/categories'),
-      api.get('/services/providers'),
+      api.get('/services/categories').catch(() => ({ data: { data: [] } })),
+      api.get('/services/providers').catch(() => ({ data: { data: [] } })),
     ])
       .then(([catsRes, provsRes]) => {
-        setCategories(catsRes.data.data);
-        setProviders(provsRes.data.data);
+        setCategories(Array.isArray(catsRes.data?.data) ? catsRes.data.data : []);
+        setProviders(Array.isArray(provsRes.data?.data) ? provsRes.data.data : []);
       })
-      .catch((err) => console.error(err))
+      .catch((err) => {
+        console.error(err);
+        setCategories([]);
+        setProviders([]);
+      })
       .finally(() => setLoading(false));
   }, [searchParams]);
 
@@ -58,16 +62,22 @@ export const ServicesPage: React.FC = () => {
     }
   };
 
-  const filteredProviders = providers.filter((p) => {
+  const filteredProviders = (providers || []).filter((p) => {
+    if (!p) return false;
     const matchesCategory =
       selectedCategory === 'all' ||
-      p.categories.some((c) => c._id === selectedCategory);
+      (p.categories || []).some((c: any) => (typeof c === 'string' ? c : c?._id) === selectedCategory);
+
+    const businessName = p.businessName || '';
+    const userName = p.user?.name || '';
+    const bio = p.bio || '';
+    const q = (searchQuery || '').toLowerCase();
 
     const matchesSearch =
-      !searchQuery ||
-      p.businessName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.bio.toLowerCase().includes(searchQuery.toLowerCase());
+      !q ||
+      businessName.toLowerCase().includes(q) ||
+      userName.toLowerCase().includes(q) ||
+      bio.toLowerCase().includes(q);
 
     return matchesCategory && matchesSearch;
   });

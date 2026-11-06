@@ -28,7 +28,11 @@ export const LandingPage: React.FC = () => {
 
   useEffect(() => {
     api.get('/services/categories')
-      .then((res) => setCategories(res.data.data))
+      .then((res) => {
+        if (Array.isArray(res.data?.data)) {
+          setCategories(res.data.data);
+        }
+      })
       .catch((err) => console.error(err));
   }, []);
 
@@ -195,7 +199,7 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {categories.map((cat) => {
+            {(categories || []).map((cat) => {
               const Icon = getCategoryIcon(cat.icon);
               return (
                 <div

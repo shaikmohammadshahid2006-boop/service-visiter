@@ -20,12 +20,24 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('svt_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('svt_user');
+      if (!saved || saved === 'undefined' || saved === 'null') return null;
+      return JSON.parse(saved);
+    } catch {
+      localStorage.removeItem('svt_user');
+      return null;
+    }
   });
   const [profile, setProfile] = useState<any | null>(() => {
-    const saved = localStorage.getItem('svt_profile');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('svt_profile');
+      if (!saved || saved === 'undefined' || saved === 'null') return null;
+      return JSON.parse(saved);
+    } catch {
+      localStorage.removeItem('svt_profile');
+      return null;
+    }
   });
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('svt_token'));
   const [unreadCount, setUnreadCount] = useState<number>(0);

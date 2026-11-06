@@ -16,9 +16,9 @@ export const NotificationDropdown: React.FC = () => {
   const fetchNotifications = async () => {
     try {
       const res = await api.get('/notifications');
-      if (res.data.success) {
+      if (res.data?.success && Array.isArray(res.data?.data)) {
         setNotifications(res.data.data);
-        setUnreadCount(res.data.unreadCount);
+        setUnreadCount(Number(res.data.unreadCount) || 0);
       }
     } catch (err) {
       console.error('Failed to load notifications:', err);

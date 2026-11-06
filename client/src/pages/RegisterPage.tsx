@@ -34,12 +34,16 @@ export const RegisterPage: React.FC = () => {
   useEffect(() => {
     api.get('/services/categories')
       .then((res) => {
-        setAvailableCategories(res.data.data);
-        if (res.data.data.length > 0) {
-          setSelectedCategories([res.data.data[0]._id]);
+        const cats = Array.isArray(res.data?.data) ? res.data.data : [];
+        setAvailableCategories(cats);
+        if (cats.length > 0) {
+          setSelectedCategories([cats[0]._id]);
         }
       })
-      .catch((err) => console.error(err));
+      .catch((err) => {
+        console.error(err);
+        setAvailableCategories([]);
+      });
   }, []);
 
   const handleCategoryToggle = (id: string) => {
