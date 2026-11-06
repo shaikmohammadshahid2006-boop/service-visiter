@@ -7,8 +7,13 @@ node_modules
 dist
 build
 
-# Environment files
+# Environment files (never commit real credentials, passwords, or secrets)
 .env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
 .env.local
 .env.development.local
 .env.test.local
