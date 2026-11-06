@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { User, IUser } from '../models/User';
 import { CustomerProfile } from '../models/CustomerProfile';
@@ -12,7 +13,8 @@ export const register = async (req: Request, res: Response, next: NextFunction):
   try {
     const { name, email, password, role, phone, address, businessName, bio, hourlyRate, categories } = req.body;
 
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const existingUser = await User.findOne({ email: cleanEmail });
     if (existingUser) {
       res.status(409).json({ success: false, message: 'An account with this email already exists.' });
       return;
@@ -22,12 +24,12 @@ export const register = async (req: Request, res: Response, next: NextFunction):
     const passwordHash = await bcrypt.hash(password, salt);
 
     const user = await User.create({
-      name,
-      email: email.toLowerCase(),
+      name: (name || '').trim(),
+      email: cleanEmail,
       passwordHash,
       role: role || 'customer',
-      phone: phone || '',
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name)}`,
+      phone: (phone || '').trim(),
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || 'user')}`,
       status: 'active',
     });
 
@@ -36,23 +38,34 @@ export const register = async (req: Request, res: Response, next: NextFunction):
     if (user.role === 'customer') {
       profile = await CustomerProfile.create({
         user: user._id,
-        address: address || {},
+        address: {
+          street: address?.street || '',
+          city: address?.city || '',
+          state: address?.state || '',
+          zipCode: address?.zipCode || '',
+          landmark: address?.landmark || '',
+        },
       });
     } else if (user.role === 'provider') {
       let resolvedCategoryIds: any[] = [];
       if (categories && Array.isArray(categories) && categories.length > 0) {
-        resolvedCategoryIds = categories;
-      } else {
+        resolvedCategoryIds = categories.filter((id: string) => mongoose.Types.ObjectId.isValid(id));
+      }
+      if (resolvedCategoryIds.length === 0) {
         // default to first active category if none selected
-        const firstCat = await ServiceCategory.findOne({ isActive: true });
-        if (firstCat) resolvedCategoryIds = [firstCat._id];
+        try {
+          const firstCat = await ServiceCategory.findOne({ isActive: true });
+          if (firstCat) resolvedCategoryIds = [firstCat._id];
+        } catch (catErr) {
+          console.warn('[Auth] Could not fetch default category:', catErr);
+        }
       }
 
       profile = await ProviderProfile.create({
         user: user._id,
-        businessName: businessName || `${user.name}'s Services`,
-        bio: bio || 'Professional household service provider committed to top quality and transparent communication.',
-        hourlyRate: hourlyRate || 65,
+        businessName: businessName?.trim() || `${user.name}'s Services`,
+        bio: bio?.trim() || 'Professional household service provider committed to top quality and transparent communication.',
+        hourlyRate: Number(hourlyRate) || 65,
         categories: resolvedCategoryIds,
         experienceYears: 3,
         ratingAverage: 5.0,
@@ -63,14 +76,18 @@ export const register = async (req: Request, res: Response, next: NextFunction):
 
     const token = generateToken(user);
 
-    // Welcome notification
-    await Notification.create({
-      recipient: user._id,
-      title: 'Welcome to ServiceVisit Tracker',
-      message: `Hello ${user.name}! Your ${user.role} account has been created successfully. Welcome aboard!`,
-      type: 'system',
-      link: user.role === 'customer' ? '/customer/overview' : '/provider/overview',
-    });
+    // Welcome notification (non-blocking)
+    try {
+      await Notification.create({
+        recipient: user._id,
+        title: 'Welcome to ServiceVisit Tracker',
+        message: `Hello ${user.name}! Your ${user.role} account has been created successfully. Welcome aboard!`,
+        type: 'system',
+        link: user.role === 'customer' ? '/customer/overview' : '/provider/overview',
+      });
+    } catch (notifErr) {
+      console.warn('[Auth] Non-fatal notification error during registration:', notifErr);
+    }
 
     res.status(201).json({
       success: true,

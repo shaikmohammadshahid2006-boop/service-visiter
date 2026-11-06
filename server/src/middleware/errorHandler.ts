@@ -10,13 +10,15 @@ export const errorHandler = (
   console.error('[Error]', err);
 
   if (err instanceof ZodError) {
+    const errorDetails = err.errors.map((e) => ({
+      field: e.path.join('.'),
+      message: e.message,
+    }));
+    const firstErrorMessage = errorDetails[0]?.message || 'Validation failed';
     res.status(400).json({
       success: false,
-      message: 'Validation failed',
-      errors: err.errors.map((e) => ({
-        field: e.path.join('.'),
-        message: e.message,
-      })),
+      message: firstErrorMessage,
+      errors: errorDetails,
     });
     return;
   }
@@ -43,7 +45,7 @@ export const errorHandler = (
   }
 
   const statusCode = err.statusCode || 500;
-  const message = err.isOperational ? err.message : (process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message || 'Internal server error');
+  const message = err.message || 'Internal server error';
 
   res.status(statusCode).json({
     success: false,

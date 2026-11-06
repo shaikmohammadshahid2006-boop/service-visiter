@@ -19,18 +19,26 @@ import { errorHandler } from './middleware/errorHandler';
 export const createApp = (): Application => {
   const app = express();
 
+  // Trust proxy for Render / Vercel load balancers
+  app.set('trust proxy', 1);
+
   // Security Middleware
   app.use(helmet({
     crossOriginResourcePolicy: false,
   }));
 
-  // CORS Middleware
+  // CORS Middleware - allow Vercel, localhost, and custom frontend URLs
   app.use(cors({
-    origin: true,
+    origin: (origin, callback) => {
+      // Allow mobile apps, curl, server-to-server or any origin
+      callback(null, true);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   }));
+
+  app.options('*', cors());
 
   // Logger
   if (process.env.NODE_ENV !== 'test') {
@@ -52,7 +60,17 @@ export const createApp = (): Application => {
   app.use('/api/auth/login', authLimiter);
   app.use('/api/auth/register', authLimiter);
 
-  // Health Check Endpoint
+  // Root & Health Check Endpoints
+  app.get('/', (req: Request, res: Response) => {
+    res.json({
+      status: 'healthy',
+      app: 'ServiceVisit Tracker API',
+      version: '1.0.0',
+      timestamp: new Date().toISOString(),
+      docs: '/api/health',
+    });
+  });
+
   app.get('/api/health', (req: Request, res: Response) => {
     res.json({
       status: 'healthy',

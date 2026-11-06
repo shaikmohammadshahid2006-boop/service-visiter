@@ -32,7 +32,15 @@ export const LoginPage: React.FC = () => {
         navigate('/customer/overview');
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Login failed. Please verify your credentials.');
+      if (err.code === 'ERR_NETWORK' || !err.response) {
+        setError(
+          'Network connection error: Unable to reach backend server. If using Render free tier, the backend server may be waking up (~30-50s). Please wait a moment and try again.'
+        );
+      } else if (err.response?.status === 404) {
+        setError('API endpoint not found (404). Ensure VITE_API_URL is configured in Vercel settings.');
+      } else {
+        setError(err.response?.data?.message || 'Login failed. Please verify your credentials.');
+      }
     } finally {
       setLoading(false);
     }

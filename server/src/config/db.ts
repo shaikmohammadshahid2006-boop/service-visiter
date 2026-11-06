@@ -10,12 +10,14 @@ export const connectDB = async (): Promise<string> => {
     try {
       console.log(`[DB] Attempting connection to configured MongoDB URI...`);
       await mongoose.connect(uri, {
-        serverSelectionTimeoutMS: 5000,
+        serverSelectionTimeoutMS: 7000,
       });
       console.log(`[DB] Connected successfully to MongoDB at ${uri.replace(/\/\/.*@/, '//***@')}`);
       return uri;
     } catch (err: any) {
-      console.warn(`[DB] Connection to external MongoDB failed (${err.message}). Falling back to MongoMemoryServer...`);
+      console.warn(`[DB] Connection to external MongoDB failed (${err.message}).`);
+      console.warn(`[DB] Note: If using MongoDB Atlas on Render/cloud, ensure IP Access List allows 0.0.0.0/0 (Network Access in Atlas).`);
+      console.warn(`[DB] Falling back to MongoMemoryServer for uninterrupted service...`);
     }
   }
 

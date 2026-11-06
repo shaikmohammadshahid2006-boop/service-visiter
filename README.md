@@ -211,26 +211,29 @@ servicevisit-tracker/
 
 ### B. Backend Deployment (Render)
 1. Connect your repository to Render as a **Web Service**.
-2. Root directory: `server`
-3. Build command: `npm install && npm run build`
-4. Start command: `npm run start`
-5. Environment Variables:
+2. Settings:
+   - Root Directory: `server` (or leave blank if deploying from repository root)
+   - Build Command: `npm install && npm run build`
+   - Start Command: `npm run start`
+3. Environment Variables:
    - `PORT`: `5000`
    - `NODE_ENV`: `production`
    - `MONGODB_URI`: `<Your MongoDB Atlas connection URI>`
-   - `JWT_SECRET`: `<A strong random string>`
+   - `JWT_SECRET`: `<A strong random string of at least 32 characters>`
    - `CLIENT_URL`: `https://your-frontend.vercel.app`
-6. (Optional) Run `npm run seed` once in the Render Shell to seed production demo data.
+4. **Important**: In MongoDB Atlas -> Network Access, ensure IP `0.0.0.0/0` is allowed so Render's dynamic cloud instances can connect.
+5. Note: On Render's Free tier, the web service spins down after 15 minutes of inactivity. When a new request arrives, it may take 30–50 seconds to wake up (the frontend displays a helpful reminder if a cold-start delay occurs).
 
 ### C. Frontend Deployment (Vercel)
 1. Import your repository into Vercel.
-2. Root directory: `client`
-3. Framework Preset: `Vite`
-4. Build command: `npm run build`
-5. Output directory: `dist`
-6. Environment Variables:
-   - `VITE_API_URL`: `https://your-backend.onrender.com`
-7. Deploy!
+2. Settings:
+   - Root Directory: `client` (or leave root with the included `vercel.json`)
+   - Framework Preset: `Vite`
+   - Build Command: `npm run build`
+   - Output Directory: `dist`
+3. Environment Variables:
+   - `VITE_API_URL`: `https://your-backend.onrender.com` (your deployed Render URL, no trailing slash needed)
+4. Deploy! Single-page app routing is handled automatically by `vercel.json`.
 
 ---
 

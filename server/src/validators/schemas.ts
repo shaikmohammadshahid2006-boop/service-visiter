@@ -20,8 +20,10 @@ export const registerSchema = z.object({
     // Provider profile fields
     businessName: z.string().optional(),
     bio: z.string().optional(),
-    hourlyRate: z.number().optional().default(50),
-    categories: z.array(z.string()).optional(),
+    hourlyRate: z
+      .preprocess((val) => (val === '' || val === undefined || val === null ? 50 : val), z.coerce.number().optional().default(50)),
+    categories: z
+      .preprocess((val) => (!val ? [] : Array.isArray(val) ? val : [val]), z.array(z.string()).optional().default([])),
   }),
 });
 

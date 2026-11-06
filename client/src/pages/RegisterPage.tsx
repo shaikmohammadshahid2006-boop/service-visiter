@@ -55,24 +55,24 @@ export const RegisterPage: React.FC = () => {
 
     try {
       const payload: any = {
-        name,
-        email,
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
         password,
         role,
-        phone,
+        phone: phone.trim(),
       };
 
       if (role === 'customer') {
         payload.address = {
-          street,
-          city,
-          state,
-          zipCode,
+          street: street.trim(),
+          city: city.trim(),
+          state: state.trim(),
+          zipCode: zipCode.trim(),
         };
       } else {
-        payload.businessName = businessName || `${name}'s Services`;
-        payload.bio = bio;
-        payload.hourlyRate = Number(hourlyRate);
+        payload.businessName = businessName.trim() || `${name.trim()}'s Services`;
+        payload.bio = bio.trim();
+        payload.hourlyRate = Number(hourlyRate) || 50;
         payload.categories = selectedCategories;
       }
 
@@ -83,7 +83,23 @@ export const RegisterPage: React.FC = () => {
         navigate('/customer/overview');
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed. Please check inputs.');
+      console.error('Registration error:', err);
+      if (err.code === 'ERR_NETWORK' || !err.response) {
+        setError(
+          'Network connection error: Unable to reach the backend server. If using Render free tier, the backend server may be spinning up from idle (takes ~30-50s). Please wait a moment and try again.'
+        );
+      } else if (err.response?.status === 404) {
+        setError(
+          'API endpoint not found (404). Ensure VITE_API_URL is properly configured in Vercel settings pointing to your Render backend.'
+        );
+      } else {
+        const msg =
+          err.response?.data?.message ||
+          err.response?.data?.errors?.[0]?.message ||
+          err.message ||
+          'Registration failed. Please check your inputs.';
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
